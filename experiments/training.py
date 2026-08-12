@@ -1,4 +1,4 @@
-import pandas as pd 
+import pandas as pd
 
 from src.preprocessing.vectorizer import (
     CountVectorizerManual
@@ -16,61 +16,70 @@ from src.models.naive_bayes import (
 
 def train_model():
 
-    # =================================
-    # 1. LOAD DATA
-    # =================================
+    # =========================
+    # 1. LOAD CLEANED DATA
+    # =========================
 
-    try:
+    df = pd.read_csv(
+        "data/processed/cleaned_mail_data.csv"
+    )
 
-        df = pd.read_csv(
-            "data/processed/cleaned_mail_data.csv"
-        )
+    print(
+        "Rows before cleaning check:",
+        len(df)
+    )
 
-        text_column = "Cleaned_Message"
+    # =========================
+    # 2. REMOVE EMPTY CLEANED TEXT
+    # =========================
 
-        print(
-            "Using cleaned dataset."
-        )
+    before = len(df)
 
-    except FileNotFoundError:
+    df = df.dropna(
+        subset=[
+            "Cleaned_Message"
+        ]
+    )
 
-        df = pd.read_csv(
-            "data/raw/mail_data.csv"
-        )
+    df = df[
+        df[
+            "Cleaned_Message"
+        ].astype(str).str.strip() != ""
+    ]
 
-        text_column = "Message"
+    after = len(df)
 
-        print(
-            "Cleaned dataset not found."
-        )
+    print(
+        "Empty cleaned rows removed:",
+        before - after
+    )
 
-        print(
-            "Using raw Message temporarily."
-        )
+    print(
+        "Rows used:",
+        after
+    )
 
-    # =================================
-    # 2. GET TEXT AND LABEL
-    # =================================
+    # =========================
+    # 3. GET TEXT + LABEL
+    # =========================
 
     texts = (
-        df[text_column]
-        .fillna("")
+        df[
+            "Cleaned_Message"
+        ]
         .astype(str)
         .tolist()
     )
 
     labels = encode_labels(
-        df["Category"].tolist()
+        df[
+            "Category"
+        ].tolist()
     )
 
-    print(
-        "Total emails:",
-        len(texts)
-    )
-
-    # =================================
-    # 3. TRAIN / TEST SPLIT
-    # =================================
+    # =========================
+    # 4. TRAIN / TEST SPLIT
+    # =========================
 
     (
         X_train_text,
@@ -85,35 +94,41 @@ def train_model():
     )
 
     print(
-        "Training:",
-        len(X_train_text)
+        "Training samples:",
+        len(
+            X_train_text
+        )
     )
 
     print(
-        "Testing:",
-        len(X_test_text)
+        "Testing samples:",
+        len(
+            X_test_text
+        )
     )
 
-    # =================================
-    # 4. BAG OF WORDS
-    # =================================
+    # =========================
+    # 5. VECTORIZE
+    # =========================
 
     vectorizer = (
         CountVectorizerManual()
     )
 
-    # QUAN TRỌNG:
-    # Fit vocabulary chỉ trên Train
     vectorizer.fit(
         X_train_text
     )
 
-    X_train = vectorizer.transform(
-        X_train_text
+    X_train = (
+        vectorizer.transform(
+            X_train_text
+        )
     )
 
-    X_test = vectorizer.transform(
-        X_test_text
+    X_test = (
+        vectorizer.transform(
+            X_test_text
+        )
     )
 
     print(
@@ -133,12 +148,14 @@ def train_model():
         X_test.shape
     )
 
-    # =================================
-    # 5. TRAIN NAIVE BAYES
-    # =================================
+    # =========================
+    # 6. TRAIN MODEL
+    # =========================
 
-    model = MultinomialNaiveBayes(
-        alpha=1.0
+    model = (
+        MultinomialNaiveBayes(
+            alpha=1.0
+        )
     )
 
     model.fit(
@@ -146,21 +163,27 @@ def train_model():
         y_train
     )
 
-    # =================================
-    # 6. PREDICTION
-    # =================================
+    # =========================
+    # 7. PREDICT
+    # =========================
 
-    predictions = model.predict(
-        X_test
+    predictions = (
+        model.predict(
+            X_test
+        )
     )
 
-    print("\nFirst 20 predictions:")
+    print(
+        "First 20 predictions:"
+    )
 
     print(
         predictions[:20]
     )
 
-    print("\nFirst 20 actual labels:")
+    print(
+        "First 20 actual labels:"
+    )
 
     print(
         y_test[:20]
